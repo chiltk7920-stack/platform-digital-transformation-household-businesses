@@ -157,6 +157,14 @@ def seed_roles_and_functions():
                     'description': 'Create, Read, Update, Delete employees in household'
                 },
                 {
+                    'function_code': 'F101',
+                    'function_name': 'Manage Household Employees (legacy)',
+                    'url_pattern': '/api/owner/employees/*',
+                    'http_methods': 'C,R,U,D',
+                    'resource_type': 'employee',
+                    'description': 'Legacy code F101 for employee management (kept for compatibility)'
+                },
+                {
                     'function_code': 'F010',
                     'function_name': 'Manage Households',
                     'url_pattern': '/api/admin/households/*',
@@ -193,8 +201,8 @@ def seed_roles_and_functions():
             print("\n[3] Assigning Functions to Roles...")
             
             role_function_mapping = {
-                'Admin': ['F001', 'F002', 'F003', 'F004', 'F109', 'F110', 'F111', 'F112', 'F050', 'F010', 'F205', 'F206'],
-                'Owner': ['F109', 'F110', 'F111', 'F112', 'F050'],
+                'Admin': ['F001', 'F002', 'F003', 'F004', 'F109', 'F110', 'F111', 'F112', 'F050', 'F101', 'F010', 'F205', 'F206'],
+                'Owner': ['F109', 'F110', 'F111', 'F112', 'F050', 'F101', 'F205', 'F206'],
                 'Employee': ['F205', 'F206']
             }
             

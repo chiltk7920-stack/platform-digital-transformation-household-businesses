@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from api.swagger import spec
 from api.middleware import middleware
 from infrastructure.databases import init_db
+import os
 from config import Config
 from flasgger import Swagger
 from config import SwaggerConfig
@@ -27,10 +28,12 @@ def create_app():
     )
     app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
-    try:
-        init_db(app)
-    except Exception as e:
-        print(f"Error initializing database: {e}")
+    # Optionally skip DB initialization (useful in dev when DB is managed externally)
+    if os.environ.get('SKIP_DB_INIT') != '1':
+        try:
+            init_db(app)
+        except Exception as e:
+            print(f"Error initializing database: {e}")
 
     # Register middleware
     middleware(app)
