@@ -187,6 +187,10 @@ Build an application (mobile and/or web) that supports the following core functi
 | F213 | view_draft_orders | R |
 | F214 | confirm_draft_order | U |
 | F215 | receive_notifications | R |
+<<<<<<< HEAD
+=======
+| F216 | view_warehouses | R |
+>>>>>>> upstream/main
 ### Rules
 1/ 25 model entities ở infrastructure là nền tảng không đụng vào, bám sát để code BE, yêu cầu đúng từng field và các quan hệ khóa chính khóa ngoại.
 2/ Todo là code mẫu, là chuẩn mực của toàn bộ Flask clean architecture system, yêu cầu dựa vào để code.
@@ -246,12 +250,27 @@ Build an application (mobile and/or web) that supports the following core functi
 - `POST /api/auth/logout` - Logout (All roles)
 - `GET /api/auth/me` - Get current user (All roles)
 
+<<<<<<< HEAD
 **User Controller (Admin - F005):**
 - `GET /api/admin/users` - List all users (Admin only)
 - `POST /api/admin/users` - Create user (Admin only)
 - `GET /api/admin/users/<id>` - Get user by id (Admin only)
 - `PUT /api/admin/users/<id>` - Update user (Admin only)
 - `DELETE /api/admin/users/<id>` - Delete user (Admin only)
+=======
+**User Controller (Admin - F005: manage_admin_users):**
+- `GET /api/admin/users` - List all users (Admin only, F005: R)
+  - **Business Rule**: Admin chỉ quản lý Admin và Owner (exclude Employee)
+  - **CHỈ Admin và Owner, KHÔNG Employee**
+- `POST /api/admin/users` - Create user (Admin only, F005: C)
+  - **Business Rule**: Admin không được tạo Employee (chỉ Owner tạo Employee)
+- `GET /api/admin/users/<id>` - Get user by id (Admin only, F005: R)
+  - **Business Rule**: Admin không được xem Employee (chỉ Owner xem Employee)
+- `PUT /api/admin/users/<id>` - Update user (Admin only, F005: U)
+  - **Business Rule**: Admin không được update Employee (chỉ Owner update Employee)
+- `DELETE /api/admin/users/<id>` - Delete user (Admin only, F005: D)
+  - **Business Rule**: Admin không được delete Employee (chỉ Owner delete Employee qua /api/owner/employees/)
+>>>>>>> upstream/main
 
 **User Controller (Owner - F101):**
 - `GET /api/owner/employees` - List employees of household (Owner only)
@@ -324,7 +343,11 @@ Build an application (mobile and/or web) that supports the following core functi
 - `DELETE /api/admin/households/<id>` - Delete household (Admin only)
 
 **Household Controller (Owner - F102):**
+<<<<<<< HEAD
 - `GET /api/owner/household` - Get own household (Owner only)
+=======
+- `GET /api/owner/household` - Get own household (Owner's household only)
+>>>>>>> upstream/main
 - `PUT /api/owner/household` - Update own household (Owner only)
 
 **SubscriptionPlan Controller (Admin - F002):**
@@ -334,12 +357,77 @@ Build an application (mobile and/or web) that supports the following core functi
 - `PUT /api/admin/subscription-plans/<id>` - Update subscription plan (Admin only)
 - `DELETE /api/admin/subscription-plans/<id>` - Delete subscription plan (Admin only)
 
+<<<<<<< HEAD
 **Subscription Controller (Admin - F003):**
 - `GET /api/admin/subscriptions` - List all subscriptions (Admin only)
 - `POST /api/admin/subscriptions` - Create subscription (Admin only)
 - `GET /api/admin/subscriptions/<id>` - Get subscription by id (Admin only)
 - `PUT /api/admin/subscriptions/<id>` - Update subscription (Admin only)
 - `DELETE /api/admin/subscriptions/<id>` - Delete subscription (Admin only)
+=======
+**SubscriptionPlan Controller (Owner - F102: view_own_household):**
+- `GET /api/owner/subscription-plans` - List all active subscription plans (Owner only, F102: R)
+  - **Business Logic**: Owner xem subscription plans để upgrade subscription của household mình
+  - **CHỈ trả về plans có status = "active"**
+  - **Dùng khi Owner muốn upgrade subscription**
+
+**SubscriptionPlan Controller (Public - No auth):**
+- `GET /api/public/subscription-plans` - List all active subscription plans (Public - No auth required)
+  - **Business Logic**: Owner chọn plan khi đăng ký (registration flow)
+  - **CHỈ trả về plans có status = "active"**
+  - **Dùng trong registration flow trước khi login**
+
+**Subscription Controller (Admin - F003: manage_subscriptions - CHỈ list và deactivate):**
+- `GET /api/admin/subscriptions` - List all subscriptions (Admin only, F003: R)
+  - **Business Rule**: Admin CHỈ được list all subscriptions, KHÔNG được create, update plan_id, delete
+- `PUT /api/admin/subscriptions/<id>` - Deactivate subscription (Admin only, F003: U)
+  - **Business Rule**: Admin CHỈ được deactivate (is_active=false), KHÔNG được:
+    - Create subscription (Owner tự đăng ký)
+    - Update plan_id (Owner tự upgrade)
+    - Delete subscription
+    - Activate subscription (Owner tự activate khi upgrade)
+  - **CHỈ nhận is_active=false**, nếu cố update plan_id, start_date, end_date, hoặc is_active=true → 403 Forbidden
+
+**Subscription Controller (Owner - F102: view_own_household):**
+- `GET /api/owner/subscription` - Get own subscription (Owner only, F102: R)
+  - **Business Logic**: Owner xem subscription của household mình (Data Isolation)
+  - **Lấy household_id từ JWT token tự động**
+- `PUT /api/owner/subscription` - Upgrade subscription plan (Owner only, F102: U)
+  - **Business Logic**: Owner tự upgrade subscription plan của household mình
+  - **Request body**: `{ "plan_id": <plan_id mới> }`
+  - **System tự động**: Update plan_id, start_date (default: today), end_date (tính từ billing_cycle của plan mới)
+  - **Data Isolation**: Lấy household_id từ JWT token tự động
+
+**Registration Controller (Public - No auth):**
+- `POST /api/public/register` - Owner registration flow (Public - No auth required)
+  - **Business Logic**: Owner đăng ký tài khoản - Tạo Household → Owner User → Subscription trong 1 transaction
+  - **Request body**: 
+    ```json
+    {
+      "plan_id": 1,
+      "household": {
+        "tax_code": "123456789012",
+        "name": "Household Name",
+        "phone": "0901234567",
+        "address": "123 Main St",
+        "description": "Description"
+      },
+      "owner_account": {
+        "user_name": "owner1",
+        "password": "password123",
+        "email": "owner@example.com",
+        "description": "Owner account"
+      }
+    }
+    ```
+  - **Flow**: 
+    1. Validate subscription plan tồn tại và active
+    2. Lấy Owner role
+    3. Tạo Household (status: Active)
+    4. Tạo Owner User account (role: Owner, status: Active, link với household)
+    5. Tạo Subscription (với plan_id, tự động tính start_date, end_date từ billing_cycle)
+  - **Tất cả trong 1 transaction**: Nếu bất kỳ bước nào fail → rollback hết
+>>>>>>> upstream/main
 
 ---
 
@@ -423,6 +511,13 @@ Build an application (mobile and/or web) that supports the following core functi
 - `PUT /api/owner/warehouses/<id>` - Update warehouse (Owner only)
 - `DELETE /api/owner/warehouses/<id>` - Delete warehouse (Owner only)
 
+<<<<<<< HEAD
+=======
+**Warehouse Controller (Employee - F216):**
+- `GET /api/employee/warehouses` - List warehouses (Employee only, read-only) - Check warehouse before creating invoice
+- `GET /api/employee/warehouses/<id>` - Get warehouse by id (Employee only, read-only)
+
+>>>>>>> upstream/main
 ---
 
 ###Kim Chi **THÀNH VIÊN 4: Customer & Seller**

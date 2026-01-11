@@ -171,11 +171,41 @@ Household → Subscription Plan (household đăng ký subscription plan)
 - **Nếu không active**: Trả 403 Forbidden
 - **Admin**: Không cần check subscription
 
+<<<<<<< HEAD
+=======
+**Business Rules về Subscription:**
+- **KHÔNG được đăng ký Plan B khi đã có Plan A active**: Một household chỉ được có 1 subscription active tại một thời điểm
+- **Owner tự quản lý subscription** (không cần Admin):
+  - **Registration flow**: Owner đăng ký plan → Subscription tự tạo trong registration flow
+  - **Upgrade flow**: Owner muốn upgrade plan → Gọi `PUT /api/owner/subscription` với `plan_id` mới → Subscription tự update
+  - Owner có endpoints: `GET /api/owner/subscription` (xem), `PUT /api/owner/subscription` (upgrade)
+  - Owner chỉ được xem/update subscription của household mình (data isolation)
+- **Admin quản lý subscription** (F003):
+  - Admin CHỈ được list all subscriptions và deactivate (is_active=false)
+  - **KHÔNG được**: Create subscription (Owner tự đăng ký qua registration flow)
+  - **KHÔNG được**: Update plan_id, start_date, end_date (Owner tự upgrade qua PUT /api/owner/subscription)
+  - **KHÔNG được**: Delete subscription
+  - **KHÔNG được**: Activate subscription (Owner tự activate khi upgrade)
+- **Upgrade flow cho Owner**:
+  - Owner gọi `PUT /api/owner/subscription` với `plan_id` mới
+  - System tự động: Update plan_id, start_date (default: today), end_date (tính từ billing_cycle của plan mới)
+
+>>>>>>> upstream/main
 #### 4. ✅ Data Isolation
 - **Owner/Employee**: Chỉ truy cập data của household mình (filter by `household_id`)
 - **Admin**: Xem tất cả data (không filter)
 - **Tự động filter** trong Repository layer
 
+<<<<<<< HEAD
+=======
+**Business Rules về Data Isolation:**
+- **Owner GET household**: Chỉ được xem household của chính mình (household_id từ JWT token)
+- **Owner KHÔNG được query "hết"**: Không có endpoint `GET /api/owner/households` (list all)
+- **Owner chỉ có endpoint**: `GET /api/owner/household` (singular) - lấy household của chính mình
+- **household_id từ JWT**: Owner không thể fake được household_id vì nó được lấy từ JWT token trong middleware
+- **Repository layer**: Chỉ query theo household_id cụ thể, không query all households cho Owner
+
+>>>>>>> upstream/main
 #### 5. ✅ Security
 - **Password hashing**: Bcrypt/werkzeug
 - **Token expiration**: Configurable, default 2-24 giờ
@@ -191,6 +221,7 @@ Household → Subscription Plan (household đăng ký subscription plan)
 ### Logic phân quyền:
 
 #### **Admin** (`household_id = NULL`):
+<<<<<<< HEAD
 - Có tất cả functions (F0xx)
 - Không cần check subscription
 - Quản lý toàn bộ hệ thống
@@ -201,6 +232,25 @@ Household → Subscription Plan (household đăng ký subscription plan)
 - Phải có subscription active
 - Chỉ truy cập data của household mình
 - Filter by `household_id`
+=======
+- Có functions (F0xx): F002, F003, F004, F005, F006, F007
+- **KHÔNG có F001 manage_households** - Admin không quản lý Household
+- **F003 manage_subscriptions**: CHỈ được list all subscriptions và deactivate (KHÔNG được create, update plan_id, delete)
+- Không cần check subscription
+- Quản lý: Subscription Plans, Subscriptions (CHỈ list và deactivate), Users (Admin/Owner), Platform Analytics, System Config, Accounting Ledgers
+- Không filter data
+
+#### **Owner** (`household_id != NULL`, `role_id = Owner`):
+- Có functions của Owner (F1xx): F101-F118
+- **Có F102 view_own_household (R, U)** - Quản lý household và subscription của chính mình
+- Phải có subscription active
+- Chỉ truy cập data của household mình
+- Filter by `household_id`
+- **Owner Registration Flow**: Chọn Plan → Tạo Household → Tạo Owner Account → Tạo Subscription (Public endpoints)
+- **Owner tự quản lý subscription**:
+  - `GET /api/owner/subscription` - Xem subscription của household mình
+  - `PUT /api/owner/subscription` - Upgrade subscription plan (tự update, không cần Admin)
+>>>>>>> upstream/main
 
 #### **Employee** (`household_id != NULL`, `role_id = Employee`):
 - Có functions của Employee (F2xx)

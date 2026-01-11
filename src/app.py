@@ -5,7 +5,6 @@ from infrastructure.databases import init_db
 import os
 from config import Config
 from flasgger import Swagger
-from config import SwaggerConfig
 from flask_swagger_ui import get_swaggerui_blueprint
 from api.routes import register_routes
 
@@ -14,11 +13,11 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     Swagger(app)
-    
+
     # Register all routes
     register_routes(app)
 
-     # Thêm Swagger UI blueprint
+    # Swagger UI blueprint
     SWAGGER_URL = '/docs'
     API_URL = '/swagger.json'
     swaggerui_blueprint = get_swaggerui_blueprint(
@@ -42,16 +41,16 @@ def create_app():
     if spec is not None:
         with app.test_request_context():
             for rule in app.url_map.iter_rules():
-                if rule.endpoint.startswith(('todo.', 'auth.', 'admin_', 'owner_', 'employee_')):
+                if rule.endpoint.startswith(('todo.', 'auth.', 'admin_', 'owner_', 'employee_', 'public')):
                     view_func = app.view_functions[rule.endpoint]
-                    print(f"Adding path: {rule.rule} -> {view_func}")
                     spec.path(view=view_func)
 
-        @app.route("/swagger.json")
-        def swagger_json():
-            return jsonify(spec.to_dict())
+    @app.route("/swagger.json")
+    def swagger_json():
+        return jsonify(spec.to_dict())
 
     return app
+
 
 if __name__ == '__main__':
     app = create_app()

@@ -3,12 +3,17 @@ from domain.models.user import User
 from typing import List, Optional
 from infrastructure.models import User as UserModel
 from infrastructure.databases.mssql import session
+from sqlalchemy import func, or_
 
 class UserRepository(IUserRepository):
     def __init__(self, session=session):
         self.session = session
 
     def add(self, user: User) -> UserModel:
+        """
+        Add user to session (NO COMMIT - let controller manage transaction)
+        Transaction management: Controller phải commit/rollback
+        """
         try:
             user_model = UserModel(
                 household_id=user.household_id,
@@ -87,3 +92,46 @@ class UserRepository(IUserRepository):
     def list_exclude_role(self, exclude_role_id: int) -> List[UserModel]:
         """List all users except users with specific role_id"""
         return self.session.query(UserModel).filter(UserModel.role_id != exclude_role_id).all()
+    
+    def search_and_filter(self, exclude_role_id: int = None, role_id: int = None, 
+                         status: str = None, household_id: int = None,
+                         search_term: str = None) -> List[UserModel]:
+        """
+        Search and filter users
+        
+        Business Logic: Admin quản lý Owner accounts - view, search, filter, manage
+        
+        Args:
+            exclude_role_id: Exclude users with this role_id (e.g., exclude Employee for Admin)
+            role_id: Filter by role_id (e.g., only Owner role)
+            status: Filter by status (Active, Inactive) - để activate/deactivate
+            household_id: Filter by household_id
+            search_term: Search by user_name or email (case-insensitive, partial match) - để search Owner accounts
+        """
+        query = self.session.query(UserModel)
+        
+        # Filter: Exclude role (Admin exclude Employee)
+        if exclude_role_id is not None:
+            query = query.filter(UserModel.role_id != exclude_role_id)
+        
+        # Filter: By role_id (e.g., only Owner)
+        if role_id is not None:
+            query = query.filter(UserModel.role_id == role_id)
+        
+        # Filter: By status (Active, Inactive) - để activate/deactivate Owner accounts
+        if status is not None:
+            query = query.filter(UserModel.status == status)
+        
+        # Filter: By household_id
+        if household_id is not None:
+            query = query.filter(UserModel.household_id == household_id)
+        
+        # Search: By user_name or email (case-insensitive, partial match)
+        if search_term:
+            search_pattern = f'%{search_term}%'
+            query = query.filter(
+                (UserModel.user_name.ilike(search_pattern)) | 
+                (UserModel.email.ilike(search_pattern))
+            )
+        
+        return query.all()
