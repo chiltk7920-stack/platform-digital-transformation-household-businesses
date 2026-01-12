@@ -7,6 +7,7 @@ class Seller(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True) # Cho phép NULL
     household_id= Column(Integer, ForeignKey("households.id"),nullable=False)
+    code = Column(String(50), nullable=True, unique=True)
     tax_code=Column(String(12),nullable=True,unique=True) # Mã số thuế hộ kinh doanh bằng số CCCD người đại diện
     name =Column(String(50),nullable=True)
     phone =Column(String(20),nullable=True)

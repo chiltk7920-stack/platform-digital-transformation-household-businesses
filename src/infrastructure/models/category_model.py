@@ -7,6 +7,7 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True) # Cho phép NULL
     household_id= Column(Integer, ForeignKey("households.id"),nullable=False)
+    code = Column(String(50), nullable=True, unique=True)
     name =Column(String(50),nullable=True)
     description = Column(String(255), nullable=True)
     status = Column(String(50), nullable=False)

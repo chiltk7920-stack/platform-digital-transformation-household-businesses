@@ -9,10 +9,12 @@ class Product(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     household_id = Column(Integer, ForeignKey("households.id"), nullable=False)
+    code = Column(String(50), nullable=True, unique=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     name = Column(String(50), nullable=True)
     image_url = Column(String(255), nullable=True)
     description = Column(String(255), nullable=True)
+    price = Column(Integer, nullable=True)
     status = Column(String(50), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
