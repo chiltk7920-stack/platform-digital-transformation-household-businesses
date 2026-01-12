@@ -11,6 +11,8 @@ class Category(Base):
     name =Column(String(50),nullable=True)
     description = Column(String(255), nullable=True)
     status = Column(String(50), nullable=False)
+    created_by= Column(String(50),nullable=True)
+    updated_by= Column(String(50),nullable=True)
     created_at = Column(DateTime,default=datetime.utcnow,nullable=False)
     updated_at = Column(DateTime,default=datetime.utcnow,onupdate=datetime.utcnow,nullable=False) 
     
