@@ -12,13 +12,21 @@ if sys.platform == 'win32':
 
 from app import create_app
 from infrastructure.databases.mssql import session
-from infrastructure.models import Category, Product, Customer, Seller
+from infrastructure.models import Category, Product, Customer, Seller, Household
 
 
 def seed_domain():
     app = create_app()
     with app.app_context():
         try:
+            # Ensure a household exists for FK fields used by domain seeders
+            household = session.query(Household).first()
+            if not household:
+                household = Household(tax_code='000000000000', name='Seed Household', status='ACTIVE', created_by='seed')
+                session.add(household)
+                session.flush()
+            household_id = household.id
+
             print('[*] Seeding categories...')
             categories = [
                 {'code': 'C001', 'name': 'Thực phẩm'},
@@ -32,7 +40,7 @@ def seed_domain():
                     cat_objs.append(ex)
                     print('  [SKIP] category', c['code'])
                 else:
-                    obj = Category(code=c['code'], name=c['name'], status='ACTIVE', created_by='seed')
+                    obj = Category(code=c['code'], name=c['name'], status='ACTIVE', created_by='seed', household_id=household_id)
                     session.add(obj)
                     session.flush()
                     cat_objs.append(obj)
@@ -50,7 +58,7 @@ def seed_domain():
                     print('  [SKIP] product', p['code'])
                     continue
                 cat = session.query(Category).filter_by(code=p['category_code']).first()
-                prod = Product(code=p['code'], name=p['name'], category_id=cat.id if cat else None, price=p['price'], status='ACTIVE', created_by='seed')
+                prod = Product(code=p['code'], name=p['name'], category_id=cat.id if cat else None, price=p['price'], status='ACTIVE', created_by='seed', household_id=household_id)
                 session.add(prod)
                 session.flush()
                 print('  [OK] created product', prod.code)
@@ -65,7 +73,7 @@ def seed_domain():
                 if ex:
                     print('  [SKIP] customer', c['code'])
                     continue
-                cust = Customer(code=c['code'], name=c['name'], phone=c['phone'], status='ACTIVE', created_by='seed')
+                cust = Customer(code=c['code'], name=c['name'], phone=c['phone'], status='ACTIVE', created_by='seed', household_id=household_id)
                 session.add(cust)
                 session.flush()
                 print('  [OK] created customer', cust.code)
@@ -80,7 +88,7 @@ def seed_domain():
                 if ex:
                     print('  [SKIP] seller', s['code'])
                     continue
-                seller = Seller(code=s['code'], name=s['name'], phone=s['phone'], status='ACTIVE', created_by='seed')
+                seller = Seller(code=s['code'], name=s['name'], phone=s['phone'], status='ACTIVE', created_by='seed', household_id=household_id)
                 session.add(seller)
                 session.flush()
                 print('  [OK] created seller', seller.code)
